@@ -3,6 +3,14 @@ from time import sleep
 
 from typing_extensions import Protocol
 
+SCREEN_WIDTH = 64
+SCREEN_HEIGHT = 32
+
+
+def byte_to_bits(b: int) -> list[int]:
+    """Bits as 0 or 1 integers from most to least significant."""
+    return [(b >> (7 - p) & 1) for p in range(8)]
+
 
 class Display(Protocol):
     def clear(self) -> None:
