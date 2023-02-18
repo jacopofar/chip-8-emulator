@@ -1,0 +1,35 @@
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "mypy>=1.0.1",
+    "black>=23.1.0",
+    "isort>=5.12.0",
+]
+
+[project]
+name = "chip8_emulator"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Jacopo Farina", email = "jacopo1.farina@gmail.com"},
+]
+dependencies = []
+requires-python = ">=3.11"
+license = {text = "GPL3"}
+
+[tool.setuptools]
+# explicitly specified to ignore folders like htmlcov that
+# would be auto-discovered as packages
+packages = [
+    "chip8_emulator",
+    # explicit, to include assets too
+    "chip8_emulator.core"
+]
+
+[tool.pdm.scripts]
+mypy_strict = {cmd = [
+    "mypy",
+    "--strict",
+    "--explicit-package-bases",
+    "chip8_emulator"
+]}
