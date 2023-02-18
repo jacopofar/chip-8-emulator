@@ -1,7 +1,18 @@
 import array
 from time import sleep
 
-from chip8_emulator.display import Display
+from typing_extensions import Protocol
+
+
+class Display(Protocol):
+    def clear(self) -> None:
+        ...
+
+    def draw(self, x: int, y: int, sprite_data: bytearray) -> bool:
+        ...
+
+    def show(self) -> None:
+        ...
 
 
 class System:
