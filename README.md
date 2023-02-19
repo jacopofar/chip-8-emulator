@@ -10,4 +10,11 @@ The code passes the [CHIP-8 test ROM](https://github.com/corax89/chip8-test-rom)
 
 There are a few instructions that are "ambiguous" and have a different effect across versions of CHIP-8. Unfortunately there's no way to tell which version is used by a RO, only guess. In those cases I adopted the most recent ones because it seems to be the most common.
 
-__NOTE__: sound is not (yet) implemented.
+__NOTE__: sound is not implemented. There are no nice ways to do so without extra libraries.
+
+# Links
+
+* guide: https://tobiasvl.github.io/blog/write-a-chip-8-emulator
+* test ROM: https://github.com/corax89/chip8-test-rom
+* sparse roms: https://github.com/loktar00/chip8/tree/master/roms
+* even more resources: https://github.com/tobiasvl/awesome-chip-8
