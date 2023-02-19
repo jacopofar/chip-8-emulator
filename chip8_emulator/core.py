@@ -110,6 +110,9 @@ class Control(Protocol):
     def is_closed(self) -> bool:
         ...
 
+    def is_pressed(self, key: int) -> bool:
+        ...
+
 
 class System:
     # bytes in the CHIP-8 RAM
@@ -286,6 +289,12 @@ class System:
                 )
                 # Extra step: display the display on the terminal
                 self.display.show()
+            case (0xE, _, 9, 0xE):
+                if self.control.is_pressed(n2):
+                    self.pc += 2
+            case (0xE, _, 0xA, 1):
+                if not self.control.is_pressed(n2):
+                    self.pc += 2
             case (0xF, _, 0, 7):
                 # TODO untested opcode
                 self.update_timers()
@@ -298,10 +307,17 @@ class System:
                 # TODO untested opcode
                 self.sound_timer = self.registers[n2]
                 self.sound_timer_start = time()
+            case (0xF, _, 2, 9):
+                # TODO untested opcode
+                # location of font data for difig in n2
+                self.index_register = 0x50 + n2 * 5
             case (0xF, _, 3, 3):
                 # TODO untested opcode
                 # binary-coded decimal conversion
                 num = str(int(self.registers[n2]))
+                if self.index_register > len(self.registers):
+                    print("WARNING: out of range on FX33: ", self.index_register)
+                    return
                 self.registers[self.index_register] = int(num[0])
                 self.registers[self.index_register + 1] = int(num[2])
                 self.registers[self.index_register + 2] = int(num[2])

@@ -6,8 +6,8 @@ No dependencies are needed to run is, the code is compliant with `mypy` strict-m
 
 ## Status
 
-The code passes the [CHIP-8 test ROM](https://github.com/corax89/chip8-test-rom) except for the (rare) FX33 instruction, and several programs I found online.
+The code passes the [CHIP-8 test ROM](https://github.com/corax89/chip8-test-rom), and can run several programs I found online. At the moment the keyboard seems to be weird but I am not sure how it was supposed to run in first place.
 
 There are a few instructions that are "ambiguous" and have a different effect across versions of CHIP-8. Unfortunately there's no way to tell which version is used by a RO, only guess. In those cases I adopted the most recent ones because it seems to be the most common.
 
-__NOTE__: sound and keyboad input are not yet implemented.
+__NOTE__: sound is not (yet) implemented.

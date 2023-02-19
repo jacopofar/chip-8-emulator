@@ -5,12 +5,31 @@ from typing import Any
 
 from chip8_emulator import core
 
+KEY_BINDINGS = {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 0xC,
+    "q": 4,
+    "w": 5,
+    "e": 6,
+    "r": 0xD,
+    "a": 7,
+    "s": 8,
+    "d": 9,
+    "f": 0xE,
+    "z": 0xA,
+    "x": 0,
+    "c": 0xB,
+    "v": 0xF,
+}
+
 
 class TkDisplay:
     PIXEL_SIZE = 10
 
     def _tk_window(
-        self, queue_screen: "Queue[bytearray]", queue_event: "Queue[tuple[str]]"
+        self, queue_screen: "Queue[bytearray]", queue_event: "Queue[tuple[str, int]]"
     ) -> None:
         # init tk
         root = tkinter.Tk()
@@ -42,9 +61,16 @@ class TkDisplay:
         myCanvas.pack()
 
         def key_pressed(event: Any) -> None:
-            print(event)
+            # print("pressed:", event)
+            queue_event.put(("pressed", KEY_BINDINGS[event.keysym]))
 
         root.bind("<Key>", key_pressed)
+
+        def key_released(event: Any) -> None:
+            # print("released:", event)
+            queue_event.put(("released", KEY_BINDINGS[event.keysym]))
+
+        root.bind("<KeyRelease>", key_released)
 
         def check_queue(queue: "Queue[bytearray]" = queue_screen) -> None:
             try:
@@ -59,17 +85,18 @@ class TkDisplay:
 
         root.after(2, check_queue)
         root.mainloop()
-        queue_event.put(("close",))
+        queue_event.put(("close", 0))
 
     def __init__(self) -> None:
         self.screen = bytearray(core.SCREEN_WIDTH * core.SCREEN_HEIGHT)
         self.queue_screen: Queue[bytearray] = Queue()
-        self.queue_events: Queue[tuple[str]] = Queue()
+        self.queue_events: Queue[tuple[str, int]] = Queue()
         self.tk_process = Process(
             target=self._tk_window, args=(self.queue_screen, self.queue_events)
         )
         self.tk_process.start()
         self.closed = False  # did the user close the window?
+        self.key_states = bytearray(16)  # 0 if not pressed, 1 if pressed
 
     def clear(self) -> None:
         for i in range(len(self.screen)):
@@ -104,11 +131,19 @@ class TkDisplay:
         try:
             while True:
                 update = self.queue_events.get_nowait()
-                if update == ("close",):
+                if update == ("close", 0):
                     self.closed = True
+                if update[0] == "pressed":
+                    self.key_states[update[1]] = 1
+                if update[0] == "released":
+                    self.key_states[update[1]] = 0
         except Empty:
             pass
 
     def is_closed(self) -> bool:
         self.check_queue()
         return self.closed
+
+    def is_pressed(self, key: int) -> bool:
+        self.check_queue()
+        return self.key_states[key] == 1
