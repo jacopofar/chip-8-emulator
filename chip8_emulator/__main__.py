@@ -5,5 +5,5 @@ from chip8_emulator.tk_display import TkDisplay
 # this acts ad Display and Control
 dc = TkDisplay()
 s = System(dc, dc)
-s.load(open("IBM Logo.ch8", "rb").read())
+s.load(open("test_opcode.ch8", "rb").read())
 s.run()
