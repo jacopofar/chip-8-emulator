@@ -162,10 +162,14 @@ class System:
         # split into 4 nibbles
         n1, n2 = b1 >> 4, b1 & 0x0F
         n3, n4 = b2 >> 4, b2 & 0x0F
-        print(self.pc, "->", n1, n2, n3, n4)
+        # print(self.pc, "->", n1, n2, n3, n4)
         match (n1, n2, n3, n4):
             case (0, 0, 0xE, 0):
                 self.display.clear()
+            case (0, 0, 0xE, 0xE):
+                # TODO untested opcode
+                # return from subroutine
+                self.pc = self.stack.pop()
             case (1, _, _, _):
                 # jump to the 3 nibbles read in order
                 self.pc = n2 << 8 | b2
@@ -185,21 +189,10 @@ class System:
                 # if register n2 is NOT equal to b2, skip next instruction
                 if self.registers[n2] != b2:
                     self.pc += 2
-            case (0, 0, 0xE, 0):
-                self.display.clear()
-            case (0, 0, 0xE, 0xE):
-                # TODO untested opcode
-                # return from subroutine
-                self.pc = self.stack.pop()
             case (5, _, _, 0):
                 # TODO untested opcode
                 # skip if n2 and n3 register are equal
                 if self.registers[n2] == self.registers[n3]:
-                    self.pc += 2
-            case (9, _, _, 0):
-                # TODO untested opcode
-                # skip if n2 and n3 register are NOT equal
-                if self.registers[n2] != self.registers[n3]:
                     self.pc += 2
             case (6, _, _, _):
                 # set register n2 as b2
@@ -245,18 +238,11 @@ class System:
                 self.registers[n2] = (self.registers[n2] - self.registers[n3]) & 0xFF
             case (8, _, _, 6):
                 # TODO untested opcode
-                # NOTE this apparently is different on CHIP-8 versions, this is
-                # the original one AFAIK
-                self.registers[n2] = self.registers[n3]
+                # NOTE this apparently is the SUPER-CHIP version,
+                # the original CHIP-8 version did
+                # self.registers[n2] = self.registers[n3]
                 self.registers[0xF] = self.registers[n2] & 1
                 self.registers[n2] = self.registers[n2] >> 1
-            case (8, _, _, 0xE):
-                # TODO untested opcode
-                # NOTE this apparently is different on CHIP-8 versions, this is
-                # the original one AFAIK
-                self.registers[n2] = self.registers[n3]
-                self.registers[0xF] = self.registers[n2] & 0x80 >> 7
-                self.registers[n2] = self.registers[n2] << 1
             case (8, _, _, 7):
                 # TODO untested opcode
                 # SUB with carry
@@ -271,39 +257,19 @@ class System:
                 # shift register n2 left, bit 7 stored into register VF
                 # note that n3 is ignored
                 self.registers[0xF] = self.registers[n2] & 0x80 >> 7
-                self.registers[n2] = self.registers[n2] << 1
+                self.registers[n2] = (self.registers[n2] << 1) & 0xFF
+            case (9, _, _, 0):
+                # TODO untested opcode
+                # skip if n2 and n3 register are NOT equal
+                if self.registers[n2] != self.registers[n3]:
+                    self.pc += 2
+            case (0xA, _, _, _):
+                # set register I with the concatenated nibbles
+                self.index_register = n2 << 8 | b2
             case (0xC, _, _, _):
                 # TODO untested opcode
                 # set register n2 to a random byte AND with b2
                 self.registers[n2] = randint(0, 0xFF) & b2
-            case (0xA, _, _, _):
-                # set register I with the concatenated nibbles
-                self.index_register = n2 << 8 | b2
-            case (0xF, _, 0, 7):
-                # TODO untested opcode
-                self.update_timers()
-                self.registers[n2] = self.delay_timer
-            case (0xF, _, 1, 5):
-                # TODO untested opcode
-                self.delay_timer = self.registers[n2]
-                self.delay_timer_start = time()
-            case (0xF, _, 1, 8):
-                # TODO untested opcode
-                self.sound_timer = self.registers[n2]
-                self.sound_timer_start = time()
-            case (0xF, _, 1, 0xE):
-                # TODO untested opcode
-                # add to I the register in n2
-                self.index_register = (self.index_register + self.registers[n2]) & 0xFF
-            case (0xF, _, 5, 5):
-                # TODO untested opcode
-                for ri in range(n2 + 1):
-                    self.ram[self.index_register + ri] = self.registers[ri]
-            case (0xF, _, 6, 5):
-                # TODO untested opcode
-                for ri in range(n2 + 1):
-                    self.registers[ri] = self.ram[self.index_register + ri]
-
             case (0xD, vx, vy, n):
                 # get actual X and Y
                 x = self.registers[vx]
@@ -320,6 +286,41 @@ class System:
                 )
                 # Extra step: display the display on the terminal
                 self.display.show()
+            case (0xF, _, 0, 7):
+                # TODO untested opcode
+                self.update_timers()
+                self.registers[n2] = self.delay_timer
+            case (0xF, _, 1, 5):
+                # TODO untested opcode
+                self.delay_timer = self.registers[n2]
+                self.delay_timer_start = time()
+            case (0xF, _, 1, 8):
+                # TODO untested opcode
+                self.sound_timer = self.registers[n2]
+                self.sound_timer_start = time()
+            case (0xF, _, 3, 3):
+                # TODO untested opcode
+                # binary-coded decimal conversion
+                num = str(int(self.registers[n2]))
+                self.registers[self.index_register] = int(num[0])
+                self.registers[self.index_register + 1] = int(num[2])
+                self.registers[self.index_register + 2] = int(num[2])
 
+            case (0xF, _, 1, 0xE):
+                # TODO untested opcode
+                # add to I the register in n2
+                # NOTE: this changes depending on the implementations
+                # some allow overflowing and some cap to 0xFF
+                # self.index_register = (self.index_register + self.registers[n2]) & 0xFF
+                self.index_register = self.index_register + self.registers[n2]
+
+            case (0xF, _, 5, 5):
+                # TODO untested opcode
+                for ri in range(n2 + 1):
+                    self.ram[self.index_register + ri] = self.registers[ri]
+            case (0xF, _, 6, 5):
+                # TODO untested opcode
+                for ri in range(n2 + 1):
+                    self.registers[ri] = self.ram[self.index_register + ri]
             case _:
                 raise ValueError(f"Unknown operation {(n1, n2, n3, n4)}")
