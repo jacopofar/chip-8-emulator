@@ -9,7 +9,9 @@ from chip8_emulator import core
 class TkDisplay:
     PIXEL_SIZE = 10
 
-    def _tk_window(self, queue: "Queue[bytearray]") -> None:
+    def _tk_window(
+        self, queue_screen: "Queue[bytearray]", queue_event: "Queue[tuple[str]]"
+    ) -> None:
         # init tk
         root = tkinter.Tk()
 
@@ -44,7 +46,7 @@ class TkDisplay:
 
         root.bind("<Key>", key_pressed)
 
-        def check_queue(queue: "Queue[bytearray]" = queue) -> None:
+        def check_queue(queue: "Queue[bytearray]" = queue_screen) -> None:
             try:
                 screen = queue.get_nowait()
                 for idx, value in enumerate(screen):
@@ -57,12 +59,17 @@ class TkDisplay:
 
         root.after(2, check_queue)
         root.mainloop()
+        queue_event.put(("close",))
 
     def __init__(self) -> None:
         self.screen = bytearray(core.SCREEN_WIDTH * core.SCREEN_HEIGHT)
-        self.queue: Queue[bytearray] = Queue()
-        self.tk_process = Process(target=self._tk_window, args=(self.queue,))
+        self.queue_screen: Queue[bytearray] = Queue()
+        self.queue_events: Queue[tuple[str]] = Queue()
+        self.tk_process = Process(
+            target=self._tk_window, args=(self.queue_screen, self.queue_events)
+        )
         self.tk_process.start()
+        self.closed = False  # did the user close the window?
 
     def clear(self) -> None:
         for i in range(len(self.screen)):
@@ -86,9 +93,22 @@ class TkDisplay:
                         did_switch = True
                     else:
                         self.screen[cur_pixel_idx] = 1
-        self.queue.put(self.screen)
+        self.queue_screen.put(self.screen)
         return did_switch
 
     def show(self) -> None:
         # do nothing, the display happens in a thread regardless
         pass
+
+    def check_queue(self) -> None:
+        try:
+            while True:
+                update = self.queue_events.get_nowait()
+                if update == ("close",):
+                    self.closed = True
+        except Empty:
+            pass
+
+    def is_closed(self) -> bool:
+        self.check_queue()
+        return self.closed

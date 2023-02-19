@@ -23,24 +23,32 @@ class Display(Protocol):
         ...
 
 
+class Control(Protocol):
+    def is_closed(self) -> bool:
+        ...
+
+
 class System:
     # bytes in the CHIP-8 RAM
     TOTAL_RAM = 4096
-    INITIAL_PC = 512  # TODO should it be another position?
+    INITIAL_PC = 512
 
-    def __init__(self, display: Display) -> None:
+    def __init__(self, display: Display, control: Control) -> None:
         self.ram = bytearray(System.TOTAL_RAM)
         self.stack = array.array("H")  # unsigned short
         self.pc: int = System.INITIAL_PC
         self.registers = bytearray(16)
         self.index_register: int = 0
         self.display = display
+        self.control = control
 
     def load(self, raw_data: bytes) -> None:
         self.ram[System.INITIAL_PC : System.INITIAL_PC + len(raw_data)] = raw_data
 
     def run(self) -> None:
         while True:
+            if self.control.is_closed():
+                return
             sleep(0.001)
             self.step()
 
