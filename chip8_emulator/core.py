@@ -170,30 +170,25 @@ class System:
             case (0, 0, 0xE, 0):
                 self.display.clear()
             case (0, 0, 0xE, 0xE):
-                # TODO untested opcode
                 # return from subroutine
                 self.pc = self.stack.pop()
             case (1, _, _, _):
                 # jump to the 3 nibbles read in order
                 self.pc = n2 << 8 | b2
             case (2, _, _, _):
-                # TODO untested opcode
                 # subroutine at NNN
                 # store the current PC, and jump to the new one
                 self.stack.append(self.pc)
                 self.pc = n2 << 8 | b2
             case (3, _, _, _):
-                # TODO untested opcode
                 # if register n2 is equal to b2, skip next instruction
                 if self.registers[n2] == b2:
                     self.pc += 2
             case (4, _, _, _):
-                # TODO untested opcode
                 # if register n2 is NOT equal to b2, skip next instruction
                 if self.registers[n2] != b2:
                     self.pc += 2
             case (5, _, _, 0):
-                # TODO untested opcode
                 # skip if n2 and n3 register are equal
                 if self.registers[n2] == self.registers[n3]:
                     self.pc += 2
@@ -204,26 +199,21 @@ class System:
                 # add to register, ignore overflow
                 self.registers[n2] = (self.registers[n2] + b2) & 0xFF
             case (8, _, _, 0):
-                # TODO untested opcode
                 # set n2 register to n3
                 self.registers[n2] = self.registers[n3]
             case (8, _, _, 1):
-                # TODO untested opcode
                 # binary OR
                 # set n2 register to n2 | n3
                 self.registers[n2] |= self.registers[n3]
             case (8, _, _, 2):
-                # TODO untested opcode
                 # binary AND
                 # set n2 register to n2 & n3
                 self.registers[n2] &= self.registers[n3]
             case (8, _, _, 3):
-                # TODO untested opcode
                 # binary XOR
                 # set n2 register to n2 ^ n3
                 self.registers[n2] ^= self.registers[n3]
             case (8, _, _, 4):
-                # TODO untested opcode
                 # ADD with carry
                 # set n2 register to n2 + n3
                 # register F is set to the overflow
@@ -231,7 +221,6 @@ class System:
                 self.registers[0xF] = sum_value >> 8
                 self.registers[n2] = sum_value & 0xFF
             case (8, _, _, 5):
-                # TODO untested opcode
                 # SUB with carry
                 # set n2 register to n2 - n3
                 # register F is set to the overflow
@@ -240,14 +229,12 @@ class System:
                 )
                 self.registers[n2] = (self.registers[n2] - self.registers[n3]) & 0xFF
             case (8, _, _, 6):
-                # TODO untested opcode
                 # NOTE this apparently is the SUPER-CHIP version,
                 # the original CHIP-8 version did
                 # self.registers[n2] = self.registers[n3]
                 self.registers[0xF] = self.registers[n2] & 1
                 self.registers[n2] = self.registers[n2] >> 1
             case (8, _, _, 7):
-                # TODO untested opcode
                 # SUB with carry
                 # set n2 register to n3 - n2
                 # register F is set to the overflow
@@ -256,13 +243,11 @@ class System:
                 )
                 self.registers[n2] = (self.registers[n3] - self.registers[n2]) & 0xFF
             case (8, _, _, 0xE):
-                # TODO untested opcode
                 # shift register n2 left, bit 7 stored into register VF
                 # note that n3 is ignored
                 self.registers[0xF] = self.registers[n2] & 0x80 >> 7
                 self.registers[n2] = (self.registers[n2] << 1) & 0xFF
             case (9, _, _, 0):
-                # TODO untested opcode
                 # skip if n2 and n3 register are NOT equal
                 if self.registers[n2] != self.registers[n3]:
                     self.pc += 2
@@ -270,7 +255,6 @@ class System:
                 # set register I with the concatenated nibbles
                 self.index_register = n2 << 8 | b2
             case (0xC, _, _, _):
-                # TODO untested opcode
                 # set register n2 to a random byte AND with b2
                 self.registers[n2] = randint(0, 0xFF) & b2
             case (0xD, vx, vy, n):
@@ -296,23 +280,18 @@ class System:
                 if not self.control.is_pressed(n2):
                     self.pc += 2
             case (0xF, _, 0, 7):
-                # TODO untested opcode
                 self.update_timers()
                 self.registers[n2] = self.delay_timer
             case (0xF, _, 1, 5):
-                # TODO untested opcode
                 self.delay_timer = self.registers[n2]
                 self.delay_timer_start = time()
             case (0xF, _, 1, 8):
-                # TODO untested opcode
                 self.sound_timer = self.registers[n2]
                 self.sound_timer_start = time()
             case (0xF, _, 2, 9):
-                # TODO untested opcode
                 # location of font data for difig in n2
                 self.index_register = 0x50 + n2 * 5
             case (0xF, _, 3, 3):
-                # TODO untested opcode
                 # binary-coded decimal conversion
                 num = str(int(self.registers[n2]))
                 if self.index_register > len(self.registers):
@@ -323,7 +302,6 @@ class System:
                 self.registers[self.index_register + 2] = int(num[2])
 
             case (0xF, _, 1, 0xE):
-                # TODO untested opcode
                 # add to I the register in n2
                 # NOTE: this changes depending on the implementations
                 # some allow overflowing and some cap to 0xFF
@@ -331,11 +309,9 @@ class System:
                 self.index_register = self.index_register + self.registers[n2]
 
             case (0xF, _, 5, 5):
-                # TODO untested opcode
                 for ri in range(n2 + 1):
                     self.ram[self.index_register + ri] = self.registers[ri]
             case (0xF, _, 6, 5):
-                # TODO untested opcode
                 for ri in range(n2 + 1):
                     self.registers[ri] = self.ram[self.index_register + ri]
             case _:
