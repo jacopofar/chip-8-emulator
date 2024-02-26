@@ -14,7 +14,7 @@ authors = [
     {name = "Jacopo Farina", email = "jacopo1.farina@gmail.com"},
 ]
 dependencies = [
-    "typing_extensions",
+    "typing_extensions.Protocol",
 ]
 requires-python = ">=3.11"
 license = {text = "GPL3"}
